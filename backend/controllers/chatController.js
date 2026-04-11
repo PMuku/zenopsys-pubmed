@@ -22,9 +22,11 @@ export const getConversationById = async (req, res, next) => {
     try {
         const { conversationId } = req.params;
 
-        const conversation = await Conversation.findById(conversationId);
+        const userId = req.user.id;
+
+        const conversation = await Conversation.findOne({ _id: conversationId, userId: userId });
         if (!conversation) {
-            const err = new Error('Conversation not found');
+            const err = new Error('Conversation not found or unauthorised');
             err.status = 404;
             return next(err);
         }
@@ -49,8 +51,14 @@ export const sendMessage = async (req, res, next) => {
         }
 
         let conversation;
-        if (conversationId)
-            conversation = await Conversation.findById(conversationId);
+        if (conversationId) {
+            conversation = await Conversation.findOne({ _id: conversationId, userId: userId });
+            if (!conversation) {
+                const err = new Error('Conversation not found or unauthorised');
+                err.status = 404;
+                return next(err);
+            }
+        }
         else
             conversation = new Conversation({ userId, title: 'New Conversation' });
 
