@@ -4,7 +4,7 @@ import Conversation from "../models/Conversation.js";
 // GET /api/users/conversations
 export const getConversations = async (req, res, next) => {
     try {
-        const { userId } = req.user.id;
+        const userId = req.user.id;
 
         const conversations = await Conversation.find({ userId}).sort({ updatedAt: -1 }).select('title updatedAt');
         
@@ -39,7 +39,7 @@ export const getConversationById = async (req, res, next) => {
 // POST /api/users/conversations
 export const sendMessage = async (req, res, next) => {
     try {
-        const { userId } = req.user.id;
+        const userId = req.user.id;
         const { conversationId, message } = req.body;
 
         if (!message) {
@@ -66,7 +66,7 @@ export const sendMessage = async (req, res, next) => {
                     authors: 'Author A',
                     year: '2026',
                     pmid: '12345678',
-                    link: 'https://samplelink.com'
+                    url: 'https://samplelink.com'
                 }
             ]
         };

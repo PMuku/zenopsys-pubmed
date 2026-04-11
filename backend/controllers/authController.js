@@ -1,7 +1,7 @@
 import User from '../models/User.js';
 
 // POST /api/auth/login
-export const login = async (req, res) => {
+export const login = async (req, res, next) => {
     try {
         const { email } = req.body;
         if (!email) {
