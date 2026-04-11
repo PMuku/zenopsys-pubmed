@@ -3,14 +3,14 @@ import express from 'express';
 import dotenv from 'dotenv';
 
 // For DB
-import connectDB from './db';
+import connectDB from './db.js';
 
 // For middleware
-import errorHandler from './middleware/errorHandler';
-import logger from './middleware/logger';
+import errorHandler from './middleware/error.js';
+import logger from './middleware/logger.js';
 
 // For routes
-import authRoutes from './routes/authRoutes';
+import authRoutes from './routes/authRoutes.js';
 
 dotenv.config();
 
