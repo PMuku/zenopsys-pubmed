@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 
+// POST /api/auth/login
 export const login = async (req, res) => {
     try {
         const { email } = req.body;
