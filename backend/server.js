@@ -11,6 +11,7 @@ import logger from './middleware/logger.js';
 
 // For routes
 import authRoutes from './routes/authRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use(logger);
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', chatRoutes);
 
 // Error handler
 app.use(errorHandler);
