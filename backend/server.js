@@ -1,7 +1,13 @@
 import express from 'express';
+import dotenv from 'dotenv';
+import connectDB from './db';
+
+dotenv.config();
+
+connectDB();
 
 const app = express();
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 2000;
 
 app.get('/', (req, res) => {
     res.send('Hello, World!');
