@@ -1,4 +1,5 @@
 import Conversation from "../models/Conversation.js";
+import { fetchPubMedData } from "../services/pubMedService.js";
 
 // Fetch conversation history
 // GET /api/users/conversations
@@ -64,20 +65,14 @@ export const sendMessage = async (req, res, next) => {
 
         conversation.messages.push({ role: 'user', content: message });
 
-        // Placeholder AI response
+        // Placeholder AI response with live citations
+        const citations = await fetchPubMedData(message);
+        
         const aiResponse = {
             role: 'assistant',
-            content: `Placeholder response from AI for query on "${message}"`,
-            citations: [
-                {
-                    title: 'Sample Research Paper',
-                    authors: 'Author A',
-                    year: '2026',
-                    pmid: '12345678',
-                    url: 'https://samplelink.com'
-                }
-            ]
-        };
+            content: `Here are ${citations.length} relevant PubMed articles`,
+            citations: citations
+        }
 
         conversation.messages.push(aiResponse);
         await conversation.save();
