@@ -1,5 +1,6 @@
 import Conversation from "../models/Conversation.js";
 import { fetchPubMedData } from "../services/pubMedService.js";
+import { generateAiResponse } from "../services/llmService.js";
 
 // Fetch conversation history
 // GET /api/users/conversations
@@ -67,12 +68,17 @@ export const sendMessage = async (req, res, next) => {
 
         conversation.messages.push({ role: 'user', content: message });
 
-        // Placeholder AI response with live citations
+        // Fetching data from pubmed and generating AI response by providing abstracts as context
         const { citations, abstracts } = await fetchPubMedData(message);
+        
+        console.log('Citations:', citations);
+        console.log('Abstracts:', abstracts);
+
+        const aiResponseText = await generateAiResponse(message, abstracts);
 
         const aiResponse = {
             role: 'assistant',
-            content: `Here are ${citations.length} relevant PubMed articles`,
+            content: aiResponseText,
             citations: citations
         }
 
