@@ -60,14 +60,16 @@ export const sendMessage = async (req, res, next) => {
                 return next(err);
             }
         }
-        else
-            conversation = new Conversation({ userId, title: 'New Conversation' });
+        else {
+            let title = message.substring(0, Math.min(30, message.length)) + '...';
+            conversation = new Conversation({ userId, title: title });
+        }
 
         conversation.messages.push({ role: 'user', content: message });
 
         // Placeholder AI response with live citations
-        const citations = await fetchPubMedData(message);
-        
+        const { citations, abstracts } = await fetchPubMedData(message);
+
         const aiResponse = {
             role: 'assistant',
             content: `Here are ${citations.length} relevant PubMed articles`,
