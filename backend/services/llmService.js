@@ -4,9 +4,9 @@ const apiKey = process.env.GOOGLE_GENAI_API_KEY;
 
 const ai = new GoogleGenAI({ apiKey: apiKey });
 
-const model = 'gemini-3-flash-preview';
+const model = 'gemini-2.5-flash';
 
-export const generateAiResponse = async (userMessage, abstracts) => {
+export const generateAiResponse = async (userMessage, abstracts, history = []) => {
     try {
         const hasData = Object.keys(abstracts).length > 0;
 
@@ -16,8 +16,11 @@ export const generateAiResponse = async (userMessage, abstracts) => {
                 return `--- Abstract (PMID: ${pmid}) ---\n${text}\n`;
             }).join('\n');
         }
-
+        
+        const historyContext = history.map(msg => `${msg.role.toUpperCase()}: ${msg.content}`).join('\n');
         const sysPrompt = `You are an expert Medical Literature Synthesizer. Your audience consists of biomedical professionals, clinicians, and researchers. Your job is to answer their natural language medical questions using ONLY the provided PubMed abstracts.
+CONVERSATION HISTORY (FOR CONTEXT):
+${historyContext}
 CRITICAL RULES:
 - Do not use outside knowledge. If the answer is not in the abstracts, explicitly state: "The provided research does not contain enough information to answer this."
 - Assume a high level of medical literacy. Do not explain basic anatomical terms or standard procedures unless specifically asked.
@@ -52,11 +55,15 @@ CRITICAL RULES:
 };
 
 // Function to optimise user's natural language query into Pubmed-safe boolean query using LLM
-export const optimizeMedicalQuery = async (userMessage) => {
+export const optimizeMedicalQuery = async (userMessage, history = []) => {
     try {
-        
-        const sysPrompt = `You are a biomedical query optimization agent that converts natural language clinical questions into PubMed-compatible Boolean queries.
-Your goal is to maximize **recall first**, then improve **precision**, while ensuring the query NEVER returns zero results unless absolutely unavoidable.
+
+        const historyContext = history.map(msg => `${msg.role.toUpperCase()}: ${msg.content}`).join('\n');
+        const sysPrompt = `You are a biomedical query optimization agent. Your primary task is to resolve any pronouns or context (e.g., "that", "those", "previous results") based on the conversation history before building the PubMed Boolean query.
+CONVERSATION HISTORY:
+${historyContext}
+## Step 0: Context Resolution
+If the user's message is a follow-up, combine it with the previous topic to form a complete query intent and re-query with a narrower scope.
 ## Step 1: Extract PICO Elements
 Identify: Population (P), Intervention (I), Comparator (C), Outcomes (O), Study type.
 ## Step 2: Build a HIGH-RECALL Base Query

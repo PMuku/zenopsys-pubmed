@@ -53,6 +53,7 @@ export const sendMessage = async (req, res, next) => {
         }
 
         let conversation;
+        let history = [];
         if (conversationId) {
             conversation = await Conversation.findOne({ _id: conversationId, userId: userId });
             if (!conversation) {
@@ -60,8 +61,8 @@ export const sendMessage = async (req, res, next) => {
                 err.status = 404;
                 return next(err);
             }
-        }
-        else {
+            history = conversation.messages.slice(-6);
+        } else {
             let title = message.substring(0, Math.min(30, message.length)) + '...';
             conversation = new Conversation({ userId, title: title });
         }
@@ -69,11 +70,11 @@ export const sendMessage = async (req, res, next) => {
         conversation.messages.push({ role: 'user', content: message });
 
         // Optimize the user's natural language into a PubMed boolean query
-        const optimizedQuery = await optimizeMedicalQuery(message);
+        const optimizedQuery = await optimizeMedicalQuery(message, history);
         console.log('Optimized Query mapped to PubMed:', optimizedQuery);
 
         // Fetching data from pubmed and generating AI response by providing abstracts as context
-        const { citations, abstracts } = await fetchPubMedData(optimizedQuery);
+        const { citations, abstracts } = await fetchPubMedData(optimizedQuery, history);
         
         console.log('Citations:', citations);
         console.log('Abstracts:', abstracts);
