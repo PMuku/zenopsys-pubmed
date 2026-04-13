@@ -53,7 +53,7 @@ PubMed is keyword-based and struggles with natural language. I implemented an LL
 
 ### Network Resilience
 
-The NCBI API is prone to `ECONNRESET` and handshake timeouts, especially under high load. I stabilized the backend by implementing a dispatcher to override Node's default connection timeouts and a recursive retry mechanism with exponential backoff.
+The NCBI API is prone to `ECONNRESET` and handshake timeouts, especially under high load. I stabilized the backend by implementing a dispatcher to override Node's default connection timeouts and a recursive retry mechanism with exponential backoff. Still the error occasionally returns, resulting in no abstracts or citations being fetched due to which the LLM is forced to reply that it doesn't have enough research to answer the question.
 
 ### Model-Agnostic LLM Service
 
