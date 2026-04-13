@@ -1,9 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
+import ChatInterface from './components/ChatInterface';
+import AuthScreen from './components/AuthScreen';
 
 function App() {
+  const [user, setUser] = useState(null);
+
   return (
-    <div>
-      <h1>PubMed AI Chatbot</h1>
+    <div className="app-layout">
+      <main className="main-content">
+        {!user ? (
+          <AuthScreen onLogin={setUser} />
+        ) : (
+          <ChatInterface user={user} />
+        )}
+      </main>
     </div>
   );
 }
