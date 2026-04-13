@@ -4,7 +4,29 @@ const apiKey = process.env.GEMINI_API_KEY;
 
 const ai = new GoogleGenAI({ apiKey: apiKey });
 
-const model = 'gemini-2.5-flash';
+const geminiModel = 'gemini-3-flash';
+const gemmaModel = 'gemma-3-27b-it';
+
+const model = gemmaModel; // can switch to gemini model if needed
+
+const callModel = async (model, sysPrompt, userPrompt, temperature = 0.2) => {
+    const isGemma = model === gemmaModel;
+    const config = { temperature: temperature, };
+
+    let contents;
+    if (isGemma) 
+        contents = sysPrompt + userPrompt;
+    else {
+        contents = userPrompt;
+        config.systemInstruction = sysPrompt;
+    }
+
+    return await ai.models.generateContent({
+        model: model,
+        contents: contents,
+        config: config
+     });
+};
 
 export const generateAiResponse = async (userMessage, abstracts, history = []) => {
     try {
@@ -36,14 +58,7 @@ CRITICAL RULES:
             "${userMessage}"
         `;
 
-        const res = await ai.models.generateContent({
-            model: model,
-            contents: userPrompt,
-            config: {
-                systemInstruction: sysPrompt,
-                temperature: 0.2
-            }
-        });
+        const res = await callModel(model, sysPrompt, userPrompt, 0.2);
 
         const aiResponseText = res.text?.trim() || "I'm sorry, I can't answer that at the moment.";
         return aiResponseText;
@@ -63,7 +78,7 @@ export const optimizeMedicalQuery = async (userMessage, history = []) => {
 CONVERSATION HISTORY:
 ${historyContext}
 ## Step 0: Context Resolution
-If the user's message is a follow-up, combine it with the previous topic to form a complete query intent and re-query with a narrower scope.
+You will have to judge whether the user's message is a follow-up. If the user's message is a follow-up, combine it with the previous topic to form a complete query intent and re-query with a narrower scope.
 ## Step 1: Extract PICO Elements
 Identify: Population (P), Intervention (I), Comparator (C), Outcomes (O), Study type.
 ## Step 2: Build a HIGH-RECALL Base Query
@@ -88,14 +103,7 @@ Format:
   "relaxedConstraints": ["list", "of", "relaxed"]
 }`;
 
-        const res = await ai.models.generateContent({
-            model: model,
-            contents: userMessage,
-            config: {
-                systemInstruction: sysPrompt,
-                temperature: 0.1
-            }
-        });
+        const res = await callModel(model, sysPrompt, userMessage, 0.1);
 
         let responseText = res.text?.trim() || "";
         responseText = responseText.replace(/^```json/i, '').replace(/^```/i, '').replace(/```$/i, '').trim();
