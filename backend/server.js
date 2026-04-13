@@ -1,6 +1,7 @@
 // Core
 import express from 'express';
 import dotenv from 'dotenv';
+import cors from 'cors';
 
 // For DB
 import connectDB from './db.js';
@@ -19,6 +20,13 @@ connectDB();
 
 const app = express();
 const PORT = process.env.PORT || 2000;
+
+// CORS configuration
+app.use(cors({
+    origin: process.env.VITE_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}));
 
 // Body parser middleware
 app.use(express.json());

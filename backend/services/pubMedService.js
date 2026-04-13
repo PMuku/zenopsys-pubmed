@@ -11,10 +11,28 @@ const parser = new XMLParser({
 const baseUrl = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/';
 const retmax = 3;
 
+const fetchWithRetry = async (url, options, retries = 3, backoff = 1500) => {
+    try {
+        const res = await fetch(url, options);
+        if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+        return res;
+    } catch (err) {
+        // Only retry if it's a timeout or network error
+        if (retries > 0 && (err.name === 'TimeoutError' || err.code === 'UND_ERR_CONNECT_TIMEOUT')) {
+            console.warn(`PubMed connection timed out. Retrying in ${backoff}ms... (${retries} retries left)`);
+            
+            await new Promise(resolve => setTimeout(resolve, backoff));
+            
+            return fetchWithRetry(url, options, retries - 1, backoff * 2);
+        }
+        throw err;
+    }
+};
+
 const pubMedSearch = async (query, baseParams) => {
     const url = `${baseUrl}esearch.fcgi?db=pubmed&retmax=${retmax}&term=${encodeURIComponent(query)}&sort=relevance&${baseParams}&retmode=json`;
     
-    const res = await fetch(url, {
+    const res = await fetchWithRetry(url, {
         signal: AbortSignal.timeout(30000)
     });
     if (!res.ok) throw new Error(`esearch failed with status: ${res.status}`);
@@ -27,7 +45,7 @@ const pubMedSearch = async (query, baseParams) => {
 const summaryFetch = async (pmids, baseParams) => {
     const url = `${baseUrl}efetch.fcgi?db=pubmed&id=${pmids.join(',')}&retmode=xml&${baseParams}`;
 
-    const res = await fetch(url, {
+    const res = await fetchWithRetry(url, {
         signal: AbortSignal.timeout(30000)
     });
     if (!res.ok) throw new Error(`efetch failed with status: ${res.status}`);
