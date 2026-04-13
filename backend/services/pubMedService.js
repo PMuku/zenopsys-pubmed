@@ -1,3 +1,4 @@
+import { Agent, setGlobalDispatcher } from 'undici';
 import { XMLParser } from 'fast-xml-parser';
 import dotenv from 'dotenv';
 
@@ -11,13 +12,18 @@ const parser = new XMLParser({
 const baseUrl = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/';
 const retmax = 3;
 
+setGlobalDispatcher(new Agent({
+    connect: {
+        timeout: 30000 // 30 seconds for the handshake
+    }
+}));
+
 const fetchWithRetry = async (url, options, retries = 3, backoff = 1500) => {
     try {
         const res = await fetch(url, options);
         if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
         return res;
     } catch (err) {
-        // Only retry if it's a timeout or network error
         if (retries > 0 && (err.name === 'TimeoutError' || err.code === 'UND_ERR_CONNECT_TIMEOUT')) {
             console.warn(`PubMed connection timed out. Retrying in ${backoff}ms... (${retries} retries left)`);
             
