@@ -50,3 +50,64 @@ CRITICAL RULES:
         return "I'm sorry, I encountered an error while analyzing the research data.";
     }
 };
+
+// Function to optimise user's natural language query into Pubmed-safe boolean query using LLM
+export const optimizeMedicalQuery = async (userMessage) => {
+    try {
+        
+        const sysPrompt = `You are a biomedical query optimization agent that converts natural language clinical questions into PubMed-compatible Boolean queries.
+Your goal is to maximize **recall first**, then improve **precision**, while ensuring the query NEVER returns zero results unless absolutely unavoidable.
+## Step 1: Extract PICO Elements
+Identify: Population (P), Intervention (I), Comparator (C), Outcomes (O), Study type.
+## Step 2: Build a HIGH-RECALL Base Query
+Use MeSH terms ONLY for the main disease if confident. Use free text for drugs and outcomes initially. Include synonyms using OR.
+Example structure: (Population) AND (Intervention) [AND Comparator]
+## Step 3: Expand with Synonyms
+Add synonyms using OR for diseases and drugs.
+## Step 4: Iterative Constraint Addition
+Add filters ONE at a time: 1. Comparator 2. Outcomes 3. Study type.
+## Step 5: Avoid Over-Constraint
+DO NOT require multiple MeSH terms simultaneously or combine too many AND conditions.
+## Step 6: Zero-Result Recovery Strategy
+Remove outcome constraints or replace MeSH terms with free text if it risks zero results. Prefer relevant results over empty results.
+## Key Principle
+PubMed is NOT a semantic search engine. Queries must be flexible, redundancy-tolerant, and biased toward recall.
+## Step 7: Final Output
+You MUST return your response as a valid JSON object so the backend API can parse it.
+Format:
+{
+  "query": "YOUR_OPTIMIZED_PUBMED_BOOLEAN_STRING",
+  "explanation": "Explanation of tradeoffs",
+  "relaxedConstraints": ["list", "of", "relaxed"]
+}`;
+
+        const res = await ai.models.generateContent({
+            model: model,
+            contents: userMessage,
+            config: {
+                systemInstruction: sysPrompt,
+                temperature: 0.1
+            }
+        });
+
+        let responseText = res.text?.trim() || "";
+        responseText = responseText.replace(/^```json/i, '').replace(/^```/i, '').replace(/```$/i, '').trim();
+
+        try {
+            const parsedData = JSON.parse(responseText);
+            if (parsedData && parsedData.query) {
+                console.log("LLM Optimization Tradeoffs:", parsedData.explanation);
+                return parsedData.query;
+            }
+        } catch (e) {
+            console.error('Failed to parse AI query JSON:', e);
+            // Fallback: if it just returned the raw string somehow
+            return responseText.replace(/^["']|["']$/g, '');
+        }
+
+        return userMessage;
+    } catch (error) {
+        console.error('Error optimizing medical query:', error.message);
+        return userMessage; // Fallback gracefully
+    }
+};

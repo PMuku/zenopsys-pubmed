@@ -1,6 +1,6 @@
 import Conversation from "../models/Conversation.js";
 import { fetchPubMedData } from "../services/pubMedService.js";
-import { generateAiResponse } from "../services/llmService.js";
+import { generateAiResponse, optimizeMedicalQuery } from "../services/llmService.js";
 
 // Fetch conversation history
 // GET /api/users/conversations
@@ -68,8 +68,12 @@ export const sendMessage = async (req, res, next) => {
 
         conversation.messages.push({ role: 'user', content: message });
 
+        // Optimize the user's natural language into a PubMed boolean query
+        const optimizedQuery = await optimizeMedicalQuery(message);
+        console.log('Optimized Query mapped to PubMed:', optimizedQuery);
+
         // Fetching data from pubmed and generating AI response by providing abstracts as context
-        const { citations, abstracts } = await fetchPubMedData(message);
+        const { citations, abstracts } = await fetchPubMedData(optimizedQuery);
         
         console.log('Citations:', citations);
         console.log('Abstracts:', abstracts);
